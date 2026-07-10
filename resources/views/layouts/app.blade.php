@@ -31,6 +31,7 @@
             --gray: #5A5A5A;
             --gray2: #8A8A8A;
             --card-subtext: rgba(255,255,255,0.65);
+            --muted: rgba(255,255,255,0.5);
             --border: rgba(255,255,255,0.08);
             --border-light: rgba(0,0,0,0.08);
         }
