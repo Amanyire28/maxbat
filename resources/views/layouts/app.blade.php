@@ -386,9 +386,9 @@
                     </form>
                     @endif
                 @else
-                    <a href="{{ route('login') }}" class="btn btn-outline-light" style="padding:8px 16px;font-size:13px;">
+                    <button onclick="openAuthModal('login')" class="btn btn-outline-light" style="padding:8px 16px;font-size:13px;">
                         <i class="fa fa-sign-in-alt"></i> Sign In
-                    </a>
+                    </button>
                 @endauth
 
                 <button class="hamburger" id="hamburgerBtn" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="mobileMenu">
@@ -553,9 +553,10 @@
     const overlay = document.getElementById('chatPaneOverlay');
     const body    = document.getElementById('chatPaneBody');
 
-    const IS_AUTH  = {{ auth()->check() && !auth()->user()->isAdmin() ? 'true' : 'false' }};
-    const SEND_URL = '{{ auth()->check() && !auth()->user()->isAdmin() ? route("customer.chat.send") : "#" }}';
-    const POLL_URL = '{{ auth()->check() && !auth()->user()->isAdmin() ? route("customer.chat.poll") : "#" }}';
+    @php $isCust = auth()->check() && !auth()->user()->isAdmin(); @endphp
+    const IS_AUTH  = {{ $isCust ? 'true' : 'false' }};
+    const SEND_URL = '{{ $isCust ? route("customer.chat.send") : "#" }}';
+    const POLL_URL = '{{ $isCust ? route("customer.chat.poll") : "#" }}';
     const CSRF     = '{{ csrf_token() }}';
     const LOGIN_URL    = '{{ route("login") }}';
     const REGISTER_URL = '{{ route("register") }}';
@@ -673,8 +674,8 @@
                     <i class="fa fa-lock"></i>
                     <h3>Sign In to Chat</h3>
                     <p>Create a free account or sign in to chat directly with our team.</p>
-                    <a href="${LOGIN_URL}"><i class="fa fa-sign-in-alt"></i> Sign In</a>
-                    <a href="${REGISTER_URL}" style="background:transparent;border:1px solid rgba(91,200,0,0.3);color:var(--green);margin-top:6px;"><i class="fa fa-user-plus"></i> Create Account</a>
+                    <button onclick="openAuthModal('login')" style="display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:var(--green);color:#000;border:none;border-radius:7px;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;"><i class="fa fa-sign-in-alt"></i> Sign In</button>
+                    <button onclick="openAuthModal('register')" style="display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:transparent;border:1px solid rgba(91,200,0,0.3);color:var(--green);border-radius:7px;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;margin-top:6px;"><i class="fa fa-user-plus"></i> Create Account</button>
                 </div>`;
             return;
         }
@@ -820,8 +821,11 @@ document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => 
 <script>
 /* ══ CART ENGINE ══════════════════════════════════════════════════════════ */
 const CART_KEY   = 'maxbat_cart_v1';
-const IS_AUTH    = {{ auth()->check() && !auth()->user()->isAdmin() ? 'true' : 'false' }};
-const ORDER_URL  = '{{ auth()->check() && !auth()->user()->isAdmin() ? route("customer.orders.store") : "#" }}';
+@php
+    $isCustomer = auth()->check() && !auth()->user()->isAdmin();
+@endphp
+const CART_IS_AUTH    = {{ $isCustomer ? 'true' : 'false' }};
+const ORDER_URL  = '{{ $isCustomer ? route("customer.orders.store") : "#" }}';
 const CSRF_TOKEN = '{{ csrf_token() }}';
 
 function cartLoad()   { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch(e){ return []; } }
@@ -844,8 +848,10 @@ function cartUpdateBadge() {
 window.addToCart = function(id, name, price, image) {
     const cart = cartLoad();
     const idx  = cart.findIndex(i => i.id === id);
+    // price may be a display string like "From UGX 45,000" — store as-is
+    const priceVal = parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
     if (idx > -1) { cart[idx].qty++; }
-    else          { cart.push({ id, name, price: parseFloat(price), image: image || '', qty: 1 }); }
+    else          { cart.push({ id, name, price: priceVal, priceDisplay: price || '—', image: image || '', qty: 1 }); }
     cartSave(cart);
     cartRenderPane();
     openCartPane();
@@ -896,9 +902,12 @@ function cartRenderPane() {
         return;
     }
 
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-
-    const itemsHtml = cart.map((item, idx) => `
+    const total = cart.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
+    const totalDisplay = total > 0 ? '$' + total.toFixed(2) : 'Contact for pricing';
+    const itemsHtml = cart.map((item, idx) => {
+        const display  = item.priceDisplay || (item.price ? '$' + item.price.toFixed(2) : '—');
+        const subtotal = item.price ? '$' + (item.price * item.qty).toFixed(2) : '—';
+        return `
         <div class="cart-item">
             ${item.image
                 ? `<img src="${item.image}" class="cart-item-img" alt="${escHtml(item.name)}">`
@@ -906,7 +915,7 @@ function cartRenderPane() {
             }
             <div class="cart-item-info">
                 <div class="cart-item-name">${escHtml(item.name)}</div>
-                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                <div class="cart-item-price">${escHtml(display)}</div>
                 <div class="cart-item-qty">
                     <button class="qty-btn" onclick="cartQty(${idx},-1)"><i class="fa fa-minus" style="font-size:10px;"></i></button>
                     <span class="qty-val">${item.qty}</span>
@@ -914,18 +923,19 @@ function cartRenderPane() {
                 </div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,0.5);">$${(item.price*item.qty).toFixed(2)}</div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,0.5);">${subtotal}</div>
                 <button class="cart-item-remove" onclick="cartRemove(${idx})" title="Remove"><i class="fa fa-times"></i></button>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 
     // Checkout section — show login prompt if not auth
-    const checkoutHtml = IS_AUTH ? `
+    const checkoutHtml = CART_IS_AUTH ? `
         <div class="cart-footer">
             <textarea class="cart-notes" id="cartNotes" rows="2" placeholder="Order notes (optional)…"></textarea>
             <div class="cart-total-row">
                 <span class="cart-total-label">Total</span>
-                <span class="cart-total-val">$${total.toFixed(2)}</span>
+                <span class="cart-total-val">${totalDisplay}</span>
             </div>
             <button class="cart-checkout-btn" id="cartCheckoutBtn" onclick="cartCheckout()">
                 <i class="fa fa-check-circle"></i> Place Order
@@ -935,9 +945,9 @@ function cartRenderPane() {
         <div class="cart-login-prompt">
             <i class="fa fa-lock"></i>
             <h3>Sign In to Checkout</h3>
-            <p>You've added <strong style="color:#fff;">${cart.length} item${cart.length>1?'s':''}</strong> worth <strong style="color:var(--green);">$${total.toFixed(2)}</strong> to your cart.<br>Sign in to complete your order — your cart is saved.</p>
-            <a href="{{ route('login') }}"><i class="fa fa-sign-in-alt"></i> Sign In</a>
-            <a href="{{ route('register') }}" class="outline"><i class="fa fa-user-plus"></i> Create Account</a>
+            <p>You've added <strong style="color:#fff;">${cart.length} item${cart.length>1?'s':''}</strong> to your cart.<br>Sign in to complete your order — your cart is saved.</p>
+            <button onclick="openAuthModal('login')" style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:var(--green);color:#000;border:none;border-radius:7px;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;"><i class="fa fa-sign-in-alt"></i> Sign In</button>
+            <button onclick="openAuthModal('register')" style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;border:1px solid rgba(91,200,0,0.3);color:var(--green);border-radius:7px;font-family:Barlow,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;margin-top:6px;"><i class="fa fa-user-plus"></i> Create Account</button>
         </div>`;
 
     body.innerHTML = `<div class="cart-items">${itemsHtml}</div>${checkoutHtml}`;
@@ -963,7 +973,7 @@ window.cartCheckout = async function() {
     if (!cart.length) return;
     const btn   = document.getElementById('cartCheckoutBtn');
     const notes = document.getElementById('cartNotes')?.value || '';
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const total = cart.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Placing Order…';
@@ -1033,5 +1043,213 @@ function showComingSoon(e) {
 }
 </script>
 @stack('scripts')
+
+{{-- ── AUTH MODAL ─────────────────────────────────────────────────────── --}}
+<style>
+.auth-overlay{position:fixed;inset:0;z-index:1300;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;}
+.auth-overlay.open{display:flex;}
+.auth-modal{background:#161616;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:100%;max-width:420px;border-top:3px solid var(--green);overflow:hidden;position:relative;}
+.auth-modal-body{padding:36px;}
+.auth-logo{text-align:center;margin-bottom:24px;}
+.auth-logo img{height:52px;border-radius:7px;margin:0 auto;}
+.auth-title{font-family:'Bebas Neue',sans-serif;font-size:28px;text-transform:uppercase;letter-spacing:1px;color:#fff;margin-bottom:4px;}
+.auth-sub{font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:24px;}
+.auth-group{margin-bottom:16px;}
+.auth-label{display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:6px;}
+.auth-input{width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,0.10);color:#fff;padding:12px 14px;border-radius:7px;font-size:14px;font-family:'Barlow',sans-serif;transition:border-color 0.2s;}
+.auth-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(91,200,0,0.1);}
+.auth-input::placeholder{color:rgba(255,255,255,0.2);}
+.auth-input.err{border-color:rgba(225,6,0,0.5);}
+.auth-field-err{font-size:12px;color:#ff6b6b;margin-top:4px;}
+.auth-btn{width:100%;padding:13px;background:var(--green);color:#000;border:none;border-radius:7px;font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:background 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;}
+.auth-btn:hover{background:#68e000;}
+.auth-btn:disabled{background:#333;color:#666;cursor:not-allowed;}
+.auth-switch{text-align:center;margin-top:20px;font-size:14px;color:rgba(255,255,255,0.4);}
+.auth-switch button{background:none;border:none;color:var(--green);font-weight:700;font-size:14px;cursor:pointer;padding:0;font-family:'Barlow',sans-serif;}
+.auth-switch button:hover{text-decoration:underline;}
+.auth-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;z-index:1;}
+.auth-close:hover{background:rgba(225,6,0,0.2);color:#ff6b6b;}
+.auth-alert{padding:10px 14px;border-radius:7px;font-size:13px;margin-bottom:16px;display:none;}
+.auth-alert.err{background:rgba(225,6,0,0.10);border:1px solid rgba(225,6,0,0.2);color:#ff6b6b;display:block;}
+.auth-alert.ok{background:rgba(91,200,0,0.10);border:1px solid rgba(91,200,0,0.2);color:var(--green);display:block;}
+.auth-divider{text-align:center;margin:16px 0;font-size:12px;color:rgba(255,255,255,0.2);letter-spacing:1px;text-transform:uppercase;}
+</style>
+
+<div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-label="Sign in or register">
+    <div class="auth-modal" id="authModal">
+        <button class="auth-close" onclick="closeAuthModal()" aria-label="Close">✕</button>
+        <div class="auth-modal-body">
+            <div class="auth-logo">
+                <img src="{{ asset('storage/maxbat.jpg') }}" alt="MaxBat">
+            </div>
+
+            {{-- ALERT --}}
+            <div class="auth-alert" id="authAlert"></div>
+
+            {{-- LOGIN FORM --}}
+            <div id="authLoginForm">
+                <div class="auth-title">Welcome Back</div>
+                <div class="auth-sub">Sign in to your MaxBat account</div>
+                <form id="loginForm" novalidate>
+                    @csrf
+                    <div class="auth-group">
+                        <label class="auth-label">Email Address</label>
+                        <input type="email" name="email" class="auth-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="auth-group">
+                        <label class="auth-label">Password</label>
+                        <input type="password" name="password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="auth-btn" id="loginBtn">
+                        <i class="fa fa-sign-in-alt"></i> <span>Sign In</span>
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    Don't have an account? <button onclick="openAuthModal('register')">Create one</button>
+                </div>
+                <div class="auth-divider">or</div>
+                <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.3);">
+                    Admin? <a href="{{ route('admin.login') }}" style="color:rgba(255,255,255,0.5);">Admin login →</a>
+                </div>
+            </div>
+
+            {{-- REGISTER FORM --}}
+            <div id="authRegisterForm" style="display:none;">
+                <div class="auth-title">Create Account</div>
+                <div class="auth-sub">Join MaxBat — it's free</div>
+                <form id="registerForm" novalidate>
+                    @csrf
+                    <div class="auth-group">
+                        <label class="auth-label">Full Name</label>
+                        <input type="text" name="name" class="auth-input" placeholder="Your full name" required autocomplete="name">
+                    </div>
+                    <div class="auth-group">
+                        <label class="auth-label">Email Address</label>
+                        <input type="email" name="email" class="auth-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="auth-group">
+                        <label class="auth-label">Password</label>
+                        <input type="password" name="password" class="auth-input" placeholder="At least 8 characters" required autocomplete="new-password">
+                    </div>
+                    <div class="auth-group">
+                        <label class="auth-label">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="auth-input" placeholder="Repeat password" required autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="auth-btn" id="registerBtn">
+                        <i class="fa fa-user-plus"></i> <span>Create Account</span>
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    Already have an account? <button onclick="openAuthModal('login')">Sign In</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const overlay  = document.getElementById('authOverlay');
+    const loginF   = document.getElementById('authLoginForm');
+    const registerF= document.getElementById('authRegisterForm');
+    const alertEl  = document.getElementById('authAlert');
+
+    window.openAuthModal = function(tab) {
+        alertEl.className = 'auth-alert';
+        alertEl.textContent = '';
+        loginF.style.display    = tab === 'login'    ? '' : 'none';
+        registerF.style.display = tab === 'register' ? '' : 'none';
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+            const first = overlay.querySelector('input');
+            if (first) first.focus();
+        }, 100);
+    };
+
+    window.closeAuthModal = function() {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeAuthModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthModal(); });
+
+    function setAlert(msg, type) {
+        alertEl.textContent = msg;
+        alertEl.className = 'auth-alert ' + type;
+    }
+    function clearAlert() { alertEl.className = 'auth-alert'; }
+
+    function setBtnLoading(btn, loading) {
+        const span = btn.querySelector('span');
+        btn.disabled = loading;
+        if (loading) { span.textContent = 'Please wait…'; }
+    }
+
+    // LOGIN
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearAlert();
+        const btn = document.getElementById('loginBtn');
+        setBtnLoading(btn, true);
+        const fd = new FormData(this);
+        try {
+            const res  = await fetch('{{ route("login.post") }}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: fd
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAlert('Signed in! Redirecting…', 'ok');
+                setTimeout(() => {
+                    if (data.redirect) { window.location.href = data.redirect; }
+                    else { window.location.reload(); }
+                }, 800);
+            } else {
+                setAlert(data.message || 'Invalid email or password.', 'err');
+                setBtnLoading(btn, false);
+            }
+        } catch(err) {
+            setAlert('Network error. Please try again.', 'err');
+            setBtnLoading(btn, false);
+        }
+    });
+
+    // REGISTER
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearAlert();
+        const btn = document.getElementById('registerBtn');
+        setBtnLoading(btn, true);
+        const fd = new FormData(this);
+        try {
+            const res  = await fetch('{{ route("register.post") }}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: fd
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAlert('Account created! Redirecting…', 'ok');
+                setTimeout(() => {
+                    if (data.redirect) { window.location.href = data.redirect; }
+                    else { window.location.reload(); }
+                }, 800);
+            } else {
+                const msg = data.errors
+                    ? Object.values(data.errors).flat().join(' ')
+                    : (data.message || 'Registration failed.');
+                setAlert(msg, 'err');
+                setBtnLoading(btn, false);
+            }
+        } catch(err) {
+            setAlert('Network error. Please try again.', 'err');
+            setBtnLoading(btn, false);
+        }
+    });
+})();
+</script>
 </body>
 </html>

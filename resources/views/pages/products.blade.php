@@ -68,9 +68,9 @@
                         <button class="btn-cart"
                             onclick="addToCart(
                                 {{ $product->id }},
-                                '{{ addslashes($product->name) }}',
-                                '{{ $product->price ?? 0 }}',
-                                '{{ $product->image ? asset('storage/'.$product->image) : '' }}'
+                                {{ json_encode($product->name) }},
+                                {{ json_encode($product->price ?? '') }},
+                                {{ json_encode($product->image ? asset('storage/'.$product->image) : '') }}
                             )">
                             <i class="fa fa-cart-plus"></i> Add to Cart
                         </button>
@@ -81,6 +81,11 @@
                     <div class="product-name">{{ $product->name }}</div>
                     @if($product->description)
                         <div class="product-desc">{{ $product->description }}</div>
+                    @endif
+                    @if($product->price)
+                    <div class="product-price">
+                        <span class="price">{{ $product->price }}</span>
+                    </div>
                     @endif
                 </div>
             </article>

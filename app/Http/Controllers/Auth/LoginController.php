@@ -29,9 +29,20 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             if (Auth::user()->isAdmin()) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => true, 'redirect' => route('admin.dashboard')]);
+                }
                 return redirect()->route('admin.dashboard');
             }
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
             return redirect()->route('customer.dashboard');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'Invalid email or password.'], 422);
         }
 
         return back()
