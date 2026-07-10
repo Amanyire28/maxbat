@@ -204,6 +204,15 @@
             <a href="{{ route('admin.vehicles.index') }}" class="sidebar-link {{ request()->routeIs('admin.vehicles.*') ? 'active' : '' }}">
                 <i class="fa fa-car"></i> Vehicle Database
             </a>
+            <a href="{{ route('admin.cars-for-sale.index') }}" class="sidebar-link {{ request()->routeIs('admin.cars-for-sale.*') ? 'active' : '' }}">
+                <i class="fa fa-car-side"></i> Cars for Sale
+            </a>
+            <a href="{{ route('admin.videos.index') }}" class="sidebar-link {{ request()->routeIs('admin.videos.*') ? 'active' : '' }}">
+                <i class="fa fa-video"></i> Videos
+            </a>
+            <a href="{{ route('admin.careers.index') }}" class="sidebar-link {{ request()->routeIs('admin.careers.*') ? 'active' : '' }}">
+                <i class="fa fa-briefcase"></i> Careers
+            </a>
             <div class="nav-section">Site</div>
             <a href="{{ route('home') }}" target="_blank" class="sidebar-link">
                 <i class="fa fa-external-link-alt"></i> View Website

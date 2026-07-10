@@ -28,6 +28,10 @@ Route::get('/about',    [PageController::class, 'about'])->name('about');
 Route::get('/blog',     [PageController::class, 'blog'])->name('blog');
 Route::get('/contact',  [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [PageController::class, 'submitContact'])->name('contact.submit');
+Route::get('/careers',       [PageController::class, 'careers'])->name('careers');
+Route::get('/videos',        [PageController::class, 'videos'])->name('videos');
+Route::get('/cars-for-sale', [PageController::class, 'carsForSale'])->name('cars_for_sale');
+Route::get('/cars-for-sale/{car}', [PageController::class, 'carShow'])->name('cars_for_sale.show');
 
 // File upload
 Route::get('/api/upload-services', [FileSubmissionController::class, 'services'])->name('upload.services');
@@ -96,6 +100,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('services-manage', ServiceController::class)
             ->parameters(['services-manage' => 'service'])
             ->names('services');
+
+        // Careers CRUD
+        Route::resource('careers', \App\Http\Controllers\Admin\CareerController::class)->names('careers');
+        // Videos CRUD
+        Route::resource('videos', \App\Http\Controllers\Admin\VideoController::class)->names('videos');
+        // Cars for Sale CRUD
+        Route::resource('cars-for-sale', \App\Http\Controllers\Admin\CarForSaleController::class)->names('cars-for-sale');
 
         // Vehicle Database
         Route::get('/vehicles', [VehicleController::class, 'typesIndex'])->name('vehicles.index');

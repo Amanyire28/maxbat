@@ -360,7 +360,10 @@
                 <a href="{{ route('home') }}"     role="menuitem" class="{{ request()->routeIs('home')     ? 'active' : '' }}">Home</a>
                 <a href="{{ route('services') }}" role="menuitem" class="{{ request()->routeIs('services') ? 'active' : '' }}">Services</a>
                 <a href="{{ route('products') }}" role="menuitem" class="{{ request()->routeIs('products') ? 'active' : '' }}">Products</a>
+                <a href="{{ route('cars_for_sale') }}" role="menuitem" class="{{ request()->routeIs('cars_for_sale*') ? 'active' : '' }}">Cars for Sale</a>
+                <a href="{{ route('videos') }}"   role="menuitem" class="{{ request()->routeIs('videos')   ? 'active' : '' }}">Videos</a>
                 <a href="#" role="menuitem" onclick="showComingSoon(event)">Projects</a>
+                <a href="{{ route('careers') }}"  role="menuitem" class="{{ request()->routeIs('careers')  ? 'active' : '' }}">Careers</a>
                 <a href="{{ route('about') }}"    role="menuitem" class="{{ request()->routeIs('about')    ? 'active' : '' }}">About</a>
                 <a href="{{ route('contact') }}"  role="menuitem" class="{{ request()->routeIs('contact')  ? 'active' : '' }}">Contact</a>
             </div>
@@ -404,7 +407,10 @@
     <a href="{{ route('home') }}"     class="mobile-nav-link {{ request()->routeIs('home')     ? 'active' : '' }}">Home</a>
     <a href="{{ route('services') }}" class="mobile-nav-link {{ request()->routeIs('services') ? 'active' : '' }}">Services</a>
     <a href="{{ route('products') }}" class="mobile-nav-link {{ request()->routeIs('products') ? 'active' : '' }}">Products</a>
+    <a href="{{ route('cars_for_sale') }}" class="mobile-nav-link {{ request()->routeIs('cars_for_sale*') ? 'active' : '' }}">Cars for Sale</a>
+    <a href="{{ route('videos') }}"   class="mobile-nav-link {{ request()->routeIs('videos')   ? 'active' : '' }}">Videos</a>
     <a href="#" class="mobile-nav-link" onclick="showComingSoon(event)">Projects</a>
+    <a href="{{ route('careers') }}"  class="mobile-nav-link {{ request()->routeIs('careers')  ? 'active' : '' }}">Careers</a>
     <a href="{{ route('about') }}"    class="mobile-nav-link {{ request()->routeIs('about')    ? 'active' : '' }}">About</a>
     <a href="{{ route('contact') }}"  class="mobile-nav-link {{ request()->routeIs('contact')  ? 'active' : '' }}">Contact</a>
     <div class="mobile-menu-footer">
@@ -460,7 +466,10 @@
                 <ul>
                     <li><a href="{{ route('home') }}">Home</a></li>
                     <li><a href="{{ route('products') }}">Products</a></li>
+                    <li><a href="{{ route('cars_for_sale') }}">Cars for Sale</a></li>
+                    <li><a href="{{ route('videos') }}">Videos</a></li>
                     <li><a href="#" onclick="showComingSoon(event)">Projects</a></li>
+                    <li><a href="{{ route('careers') }}">Careers</a></li>
                     <li><a href="{{ route('about') }}">About Us</a></li>
                     <li><a href="{{ route('contact') }}">Contact</a></li>
                 </ul>

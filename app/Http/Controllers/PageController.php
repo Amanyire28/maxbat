@@ -27,6 +27,27 @@ class PageController extends Controller
     public function blog()    { return view('pages.blog'); }
     public function contact() { return view('pages.contact'); }
 
+    public function careers()
+    {
+        $careers = \App\Models\Career::where('active', true)->latest()->get();
+        return view('pages.careers', compact('careers'));
+    }
+    public function videos()
+    {
+        $videos = \App\Models\Video::where('active', true)->latest()->get();
+        return view('pages.videos', compact('videos'));
+    }
+    public function carsForSale()
+    {
+        $cars = \App\Models\CarForSale::where('active', true)->latest()->get();
+        return view('pages.cars_for_sale', compact('cars'));
+    }
+    public function carShow($id)
+    {
+        $car = \App\Models\CarForSale::where('active', true)->findOrFail($id);
+        return view('pages.car_show', compact('car'));
+    }
+
     public function submitContact(Request $request)
     {
         $data = $request->validate([
