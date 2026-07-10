@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Rajdhani', 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    --color-green-accent: #7CFC00;
+    --color-red-accent: #E10600;
+    --color-bg-dark: #0B0B0B;
+    --color-gray-light: #BDBDBD;
+}
